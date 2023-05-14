@@ -3,6 +3,9 @@ import { undefine } from '@formkit/utils'
 
 declare module '@formkit/core' {
   interface FormKitNodeExtensions {
+    props: Partial<{
+      cache: CacheProp | false
+    }>
     clearCache: () => void
   }
 }
