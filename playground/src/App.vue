@@ -1,4 +1,9 @@
 <script setup>
+import { ref } from 'vue'
+import { reset } from '@formkit/core'
+
+const form = ref()
+
 async function submit() {
   await new Promise((r) => setTimeout(r, 1000))
   alert('Submitted! 🎉')
@@ -14,8 +19,14 @@ async function submit() {
       height="50"
       class="logo"
     />
-    <FormKit type="form" #default="{ value }" @submit="submit">
-      <FormKit type="text" name="name" label="Name" help="What do people call you?" />
+    <FormKit ref="form" type="form" #default="{ value }" :cache="{ key: 'form1' }" @submit="submit">
+      <FormKit
+        ref="nameInput"
+        type="text"
+        name="name"
+        label="Name"
+        help="What do people call you?"
+      />
       <FormKit
         type="checkbox"
         name="flavors"
@@ -39,6 +50,7 @@ async function submit() {
       />
       <pre>{{ value }}</pre>
     </FormKit>
+    <button @click="reset(form.node)">Reset</button>
   </div>
 </template>
 
