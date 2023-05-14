@@ -1,6 +1,12 @@
 import type { FormKitNode, FormKitPlugin } from '@formkit/core'
 import { undefine } from '@formkit/utils'
 
+declare module '@formkit/core' {
+  interface FormKitNodeExtensions {
+    clearCache: () => void
+  }
+}
+
 /**
  * The options to be passed to {@link createCachePlugin|createCachePlugin}
  *
@@ -74,9 +80,15 @@ export function createCachePlugin(CacheOptions?: CacheOptions): FormKitPlugin {
         )
       })
 
+      node.clearCache = () => localStorage.removeItem(key)
+      // TODO: Listen to submit:success event
       node.hook.submit((payload, next) => {
-        localStorage.removeItem(key)
+        node.clearCache()
         return next(payload)
+      })
+      node.on('reset', async () => {
+        await node.settled
+        node.clearCache()
       })
     })
   }
