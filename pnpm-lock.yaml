@@ -4,6 +4,9 @@ dependencies:
   '@formkit/core':
     specifier: ^0.17.0
     version: 0.17.0
+  '@formkit/inputs':
+    specifier: ^0.17.0
+    version: 0.17.0
   '@formkit/utils':
     specifier: ^0.17.0
     version: 0.17.0
@@ -486,6 +489,13 @@ packages:
   /@formkit/core@0.17.0:
     resolution: {integrity: sha512-g+OkGsA96Sfb/BctsU5bqz7jfXsk9PZGpxHp2jWGVA8GEHadV4XDp6VH2fXdIkYJXO7+legYMbTggGM3pUE6UA==}
     dependencies:
+      '@formkit/utils': 0.17.0
+    dev: false
+
+  /@formkit/inputs@0.17.0:
+    resolution: {integrity: sha512-HlmO8tbxlYH/Zw9jGaUUIAsfCt6k4Ss1VS6zj6xUrYpMPaQxk4v6XnpEUZ4hZgbbxa944n6/qRKU+DgouelFUw==}
+    dependencies:
+      '@formkit/core': 0.17.0
       '@formkit/utils': 0.17.0
     dev: false
 

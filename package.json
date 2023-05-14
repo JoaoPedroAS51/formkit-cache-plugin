@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "@formkit/core": "^0.17.0",
+    "@formkit/inputs": "^0.17.0",
     "@formkit/utils": "^0.17.0"
   },
   "devDependencies": {
