@@ -31,7 +31,8 @@
   "dependencies": {
     "@formkit/core": "^0.17.0",
     "@formkit/inputs": "^0.17.0",
-    "@formkit/utils": "^0.17.0"
+    "@formkit/utils": "^0.17.0",
+    "unstorage": "^1.6.0"
   },
   "devDependencies": {
     "@vitest/coverage-c8": "^0.30.1",
