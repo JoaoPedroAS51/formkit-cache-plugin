@@ -7,8 +7,19 @@ import { undefine } from '@formkit/utils'
  * @public
  */
 export interface CacheOptions {
+  /* @default 'formkit' */
   prefix?: string
+  /* @default 3_600_000 */
   maxAge?: number
+}
+
+/**
+ * The options to be passed to cache prop
+ *
+ * @public
+ */
+export interface CacheProp {
+  key: string
 }
 
 /**
@@ -33,9 +44,15 @@ export function createCachePlugin(CacheOptions?: CacheOptions): FormKitPlugin {
         return
       }
 
-      const prefix = CacheOptions?.prefix ?? 'formkit'
-      const maxAge = CacheOptions?.maxAge ?? 3_600_000 // 1 hour
-      const key = `${prefix}-${node.name}`
+      const { prefix = 'formkit', maxAge = 3_600_000 } = CacheOptions ?? {}
+      const { key: cacheKey } = node.props.cache as CacheProp
+
+      if (!cacheKey) {
+        console.log(`[FormKit] Missing cache key for ${node.name}`)
+        return
+      }
+
+      const key = `${prefix}-${cacheKey}`
       const value = localStorage.getItem(key)
 
       if (value) {
