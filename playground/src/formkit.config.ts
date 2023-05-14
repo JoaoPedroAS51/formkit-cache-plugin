@@ -1,11 +1,11 @@
 import '@formkit/themes/genesis'
 import { genesisIcons } from '@formkit/icons'
 import { DefaultConfigOptions } from '@formkit/vue'
-import { createMyPlugin } from '../..'
+import { createCachePlugin } from '../..'
 
 const config: DefaultConfigOptions = {
   icons: { ...genesisIcons },
-  plugins: [createMyPlugin()]
+  plugins: [createCachePlugin()]
 }
 
 export default config

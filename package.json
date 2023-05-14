@@ -1,8 +1,8 @@
 {
-  "name": "formkit-plugin",
+  "name": "formkit-cache-plugin",
   "version": "0.0.0",
-  "description": "FormKit plugin",
-  "repository": "formkit-plugin",
+  "description": "FormKit Cache plugin",
+  "repository": "JoaoPedroAS51/formkit-cache-plugin",
   "license": "MIT",
   "sideEffects": false,
   "type": "module",
