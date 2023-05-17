@@ -5,32 +5,34 @@ import { createStorage, type Driver } from 'unstorage'
 declare module '@formkit/core' {
   interface FormKitNodeExtensions {
     props: Partial<{
-      cache: CacheProp | false
+      cache: boolean
     }>
-    clearCache: () => void
+    clearCache: () => Promise<void>
   }
 }
 
 /**
- * The options to be passed to {@link createCachePlugin|createCachePlugin}
+ * The options to be passed to {@link createCachePlugin | createCachePlugin}
+ *
+ * @param prefix - The prefix to use for the local storage key
+ * @param key - The key to use for the local storage entry, useful for scoping data per user
+ * @param control - The form control to use enable or disable saving to storage. Must return a boolean value.
+ * @param maxAge - The maximum age of the local storage entry in milliseconds
+ * @param debounce - The debounce time in milliseconds to use when saving to localStorage
+ * @param beforeSave - A function to call for modifying data before saving to localStorage
+ * @param beforeLoad - A function to call for modifying data before loading from localStorage
  *
  * @public
  */
 export interface CacheOptions {
-  /* @default 'formkit' */
   prefix?: string
-  /* @default 3_600_000 */
+  key?: string | number
+  control?: string
   maxAge?: number
-  driver: Driver
-}
-
-/**
- * The options to be passed to cache prop
- *
- * @public
- */
-export interface CacheProp {
-  key: string
+  debounce?: number
+  beforeSave?: (payload: any) => any
+  beforeLoad?: (payload: any) => any
+  driver?: Driver
 }
 
 /**
@@ -44,71 +46,165 @@ interface CacheValue {
 /**
  * Creates a new lazy plugin.
  *
- * @param CacheOptions - The options of {@link CacheOptions|CacheOptions} to pass to the plugin
+ * @param cacheOptions - The options of {@link CacheOptions|CacheOptions} to pass to the plugin
  *
  * @returns A {@link @formkit/core#FormKitPlugin|FormKitPlugin}
  *
  * @public
  */
-export function createCachePlugin(CacheOptions?: CacheOptions): FormKitPlugin {
+export function createCachePlugin(cacheOptions?: CacheOptions): FormKitPlugin {
   const cachePlugin = (node: FormKitNode) => {
-    if (node.props.type !== 'form') {
+    // only apply if internal FormKit type is 'group'. This applies
+    // to 'form' and 'group' inputs — as well as any add-on inputs
+    // registered of FormKit type 'group' (eg. 'multi-step').
+    if (node.type !== 'group') {
       return
     }
-    node.addProps(['cache'])
+
+    // enable SSR support
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    let cachedStorageData: CacheValue | undefined
+    const shouldUseCache = (controlNode: FormKitNode | undefined) => {
+      let controlFieldValue = true
+      if (controlNode) {
+        controlFieldValue = controlNode.value === true
+      }
+      return undefine(node.props.cache) && controlFieldValue
+    }
 
     node.on('created', async () => {
-      const cache = undefine(node.props.cache)
-      if (!cache) {
-        return
+      await node.settled
+
+      node.addProps(['cache'])
+      node.extend('restoreCache', {
+        get: (node) => async () => {
+          if (!cachedStorageData) {
+            return
+          }
+          await node.settled
+          await loadValue(cachedStorageData)
+        },
+        set: false,
+      })
+
+      // if the user provided a control field, then we need to listen for changes
+      // and use it to determine whether or not to use local storage
+      // if the user provided a control field, then we need to listen for changes
+      // and use it to determine whether or not to use local storage
+      const controlField = cacheOptions?.control ?? undefined
+      let controlNode: FormKitNode | undefined
+      if (typeof controlField === 'string') {
+        const controlNode = node.at(controlField)
+        if (controlNode) {
+          controlNode.on('commit', () => {
+            useCache = shouldUseCache(controlNode)
+            if (!useCache) {
+              storage.removeItem(storageKey)
+            }
+          })
+        }
       }
 
+      let useCache = shouldUseCache(controlNode)
+      let saveTimeout: ReturnType<typeof setTimeout> | number = 0
       const {
         prefix = 'formkit',
         maxAge = 3_600_000,
+        debounce = 200,
         driver,
-      } = CacheOptions ?? {}
-
-      if (!driver) {
-        console.log(`[FormKit] Storage driver is required for cache plugin`)
-        return
-      }
+      } = cacheOptions ?? {}
 
       const storage = createStorage({ driver })
+      const key = cacheOptions?.key ? `:${cacheOptions.key}` : '' // for scoping to a specific user
+      const storageKey = `${prefix}${key}:${node.name}`
 
-      const { key: cacheKey } = node.props.cache as CacheProp
-
-      if (!cacheKey) {
+      if (!storageKey) {
         console.log(`[FormKit] Missing cache key for ${node.name}`)
         return
       }
 
-      const key = `${prefix}-${cacheKey}`
-      const value = (await storage.getItem(key)) as CacheValue | undefined
+      node.clearCache = () => storage.removeItem(storageKey)
 
-      if (value) {
+      const loadValue = async (forceValue?: CacheValue) => {
+        const value =
+          forceValue ||
+          ((await storage.getItem(storageKey)) as CacheValue | undefined)
+
+        if (!value) {
+          return
+        }
+
+        if (typeof cacheOptions?.beforeLoad === 'function') {
+          node.props.disabled = true
+          try {
+            value.data = await cacheOptions.beforeLoad(value.data)
+          } catch (error) {
+            console.error(error)
+          }
+          node.props.disabled = false
+        }
+
+        if (!value || typeof value.data !== 'object') {
+          return
+        }
+
         await (value.maxAge > Date.now()
-          ? node.input(value.data)
-          : storage.removeItem(key))
+          ? node.input(value.data, false)
+          : storage.removeItem(storageKey))
       }
 
-      node.on('commit', async ({ payload }) => {
-        await storage.setItem(key, {
+      const saveValue = async (payload: unknown) => {
+        let savePayload = payload
+
+        if (typeof cacheOptions?.beforeSave === 'function') {
+          try {
+            savePayload = await cacheOptions.beforeSave(payload)
+          } catch (error) {
+            console.error(error)
+          }
+        }
+
+        if (!savePayload) {
+          return
+        }
+
+        await storage.setItem(storageKey, {
           maxAge: Date.now() + maxAge,
-          data: payload,
+          data: savePayload,
         })
+      }
+
+      node.on('commit', ({ payload }) => {
+        if (!useCache) {
+          return
+        }
+
+        // debounce the save to local storage
+        clearTimeout(saveTimeout)
+        saveTimeout = setTimeout(() => saveValue(payload), debounce)
       })
 
-      node.clearCache = () => storage.removeItem(key)
-      // TODO: Listen to submit:success event
+      node.on('prop:cache', async () => {
+        useCache = shouldUseCache(controlNode)
+        if (!useCache) {
+          await storage.removeItem(storageKey)
+        }
+      })
+
       node.hook.submit(async (payload, next) => {
-        await node.clearCache()
+        // cache data in case the user wants to restore
+        cachedStorageData = (await storage.getItem(storageKey)) as
+          | CacheValue
+          | undefined
+        // remove from the localStorage cache
+        await storage.removeItem(storageKey)
         return next(payload)
       })
-      node.on('reset', async () => {
-        await node.settled
-        await node.clearCache()
-      })
+
+      await loadValue()
     })
   }
 
