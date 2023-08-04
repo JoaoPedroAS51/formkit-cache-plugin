@@ -1,6 +1,8 @@
 <script setup>
 import { ref } from 'vue'
 import { reset } from '@formkit/core'
+import localStorageDriver from 'unstorage/drivers/localstorage'
+import { createCachePlugin } from '../..'
 
 const form = ref()
 
@@ -19,7 +21,15 @@ async function submit() {
       height="50"
       class="logo"
     />
-    <FormKit ref="form" type="form" #default="{ value }" :cache="{ key: 'form1' }" @submit="submit">
+    <FormKit
+      ref="form"
+      #default="{ value }"
+      type="form"
+      name="form"
+      :plugins="[createCachePlugin({ key: 'customKey', driver: localStorageDriver() })]"
+      cache
+      @submit="submit"
+    >
       <FormKit
         ref="nameInput"
         type="text"
