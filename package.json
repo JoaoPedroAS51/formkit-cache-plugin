@@ -29,20 +29,20 @@
     "test": "pnpm lint && vitest run --coverage"
   },
   "dependencies": {
-    "@formkit/core": "^0.17.0",
-    "@formkit/inputs": "^0.17.0",
-    "@formkit/utils": "^0.17.0",
-    "unstorage": "^1.6.0"
+    "@formkit/core": "^0.17.5",
+    "@formkit/inputs": "^0.17.5",
+    "@formkit/utils": "^0.17.5",
+    "unstorage": "^1.8.0"
   },
   "devDependencies": {
-    "@vitest/coverage-c8": "^0.30.1",
-    "changelogen": "^0.5.3",
-    "eslint": "^8.39.0",
-    "eslint-config-unjs": "^0.1.0",
-    "prettier": "^2.8.8",
-    "typescript": "^4.9.5",
+    "@vitest/coverage-c8": "^0.33.0",
+    "changelogen": "^0.5.4",
+    "eslint": "^8.46.0",
+    "eslint-config-unjs": "^0.2.1",
+    "prettier": "^3.0.1",
+    "typescript": "^5.1.6",
     "unbuild": "^1.2.1",
-    "vitest": "^0.30.1"
+    "vitest": "^0.34.1"
   },
-  "packageManager": "pnpm@7.32.2"
+  "packageManager": "pnpm@8.6.11"
 }
