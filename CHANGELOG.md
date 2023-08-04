@@ -1,0 +1,26 @@
+# Changelog
+
+
+## v0.0.1
+
+
+### 🚀 Enhancements
+
+- Cache plugin for local storage (34222fc)
+- Cache key from prop options (8f7d714)
+- Add `node.clearCache` method and clear on reset (4bbc4b7)
+- Add cache prop type (0f480d9)
+- Integrate with unstorage (cbf983a)
+- Add new features from official `localStoragePlugin` (#1)
+
+### 🏡 Chore
+
+- Plugin name (957c3fa)
+- Update README (1da8df9)
+- **dev-deps:** Fix @vitest/coverage-v8 (312c23e)
+
+### ❤️  Contributors
+
+- João Pedro Antunes Silva <joao-pedroas@hotmail.com>
+- João Pedro Antunes Silva <joao-pedroas@hotmail.com>
+
