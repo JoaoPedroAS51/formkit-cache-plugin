@@ -4,9 +4,7 @@ import { createStorage, type Driver } from 'unstorage'
 
 declare module '@formkit/core' {
   interface FormKitNodeExtensions {
-    props: Partial<{
-      cache: boolean
-    }>
+    restoreCache: () => Promise<void>
     clearCache: () => Promise<void>
   }
 }
@@ -14,13 +12,13 @@ declare module '@formkit/core' {
 /**
  * The options to be passed to {@link createCachePlugin | createCachePlugin}
  *
- * @param prefix - The prefix to use for the local storage key
- * @param key - The key to use for the local storage entry, useful for scoping data per user
+ * @param prefix - The prefix to use for the storage key
+ * @param key - The key to use for the storage entry, useful for scoping data per user
  * @param control - The form control to use enable or disable saving to storage. Must return a boolean value.
- * @param maxAge - The maximum age of the local storage entry in milliseconds
- * @param debounce - The debounce time in milliseconds to use when saving to localStorage
- * @param beforeSave - A function to call for modifying data before saving to localStorage
- * @param beforeLoad - A function to call for modifying data before loading from localStorage
+ * @param maxAge - The maximum age of the storage entry in milliseconds
+ * @param debounce - The debounce time in milliseconds to use when saving to storage
+ * @param beforeSave - A function to call for modifying data before saving to storage
+ * @param beforeLoad - A function to call for modifying data before loading from storage
  *
  * @public
  */
@@ -97,9 +95,9 @@ export function createCachePlugin(cacheOptions?: CacheOptions): FormKitPlugin {
       })
 
       // if the user provided a control field, then we need to listen for changes
-      // and use it to determine whether or not to use local storage
+      // and use it to determine whether or not to use storage
       // if the user provided a control field, then we need to listen for changes
-      // and use it to determine whether or not to use local storage
+      // and use it to determine whether or not to use storage
       const controlField = cacheOptions?.control ?? undefined
       let controlNode: FormKitNode | undefined
       if (typeof controlField === 'string') {
@@ -190,7 +188,7 @@ export function createCachePlugin(cacheOptions?: CacheOptions): FormKitPlugin {
           return
         }
 
-        // debounce the save to local storage
+        // debounce the save to storage
         clearTimeout(saveTimeout)
         saveTimeout = setTimeout(() => saveValue(payload), debounce)
       })
@@ -207,7 +205,7 @@ export function createCachePlugin(cacheOptions?: CacheOptions): FormKitPlugin {
         cachedStorageData = (await storage.getItem(storageKey)) as
           | CacheValue
           | undefined
-        // remove from the localStorage cache
+        // remove from the storage cache
         await clearValue()
         return next(payload)
       })
