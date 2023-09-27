@@ -89,6 +89,12 @@ export function createCachePlugin(cacheOptions?: CacheOptions): FormKitPlugin {
         },
         set: false,
       })
+      node.extend('clearCache', {
+        get: (node) => async () => {
+          await clearValue()
+        },
+        set: false,
+      })
 
       // if the user provided a control field, then we need to listen for changes
       // and use it to determine whether or not to use local storage
@@ -102,7 +108,7 @@ export function createCachePlugin(cacheOptions?: CacheOptions): FormKitPlugin {
           controlNode.on('commit', () => {
             useCache = shouldUseCache(controlNode)
             if (!useCache) {
-              storage.removeItem(storageKey)
+              clearValue()
             }
           })
         }
@@ -125,8 +131,6 @@ export function createCachePlugin(cacheOptions?: CacheOptions): FormKitPlugin {
         console.log(`[FormKit] Missing cache key for ${node.name}`)
         return
       }
-
-      node.clearCache = () => storage.removeItem(storageKey)
 
       const loadValue = async (forceValue?: CacheValue) => {
         const value =
@@ -153,7 +157,7 @@ export function createCachePlugin(cacheOptions?: CacheOptions): FormKitPlugin {
 
         await (value.maxAge > Date.now()
           ? node.input(value.data, false)
-          : storage.removeItem(storageKey))
+          : clearValue())
       }
 
       const saveValue = async (payload: unknown) => {
@@ -177,6 +181,10 @@ export function createCachePlugin(cacheOptions?: CacheOptions): FormKitPlugin {
         })
       }
 
+      const clearValue = async () => {
+        await storage.removeItem(storageKey)
+      }
+
       node.on('commit', ({ payload }) => {
         if (!useCache) {
           return
@@ -190,7 +198,7 @@ export function createCachePlugin(cacheOptions?: CacheOptions): FormKitPlugin {
       node.on('prop:cache', async () => {
         useCache = shouldUseCache(controlNode)
         if (!useCache) {
-          await storage.removeItem(storageKey)
+          await clearValue()
         }
       })
 
@@ -200,7 +208,7 @@ export function createCachePlugin(cacheOptions?: CacheOptions): FormKitPlugin {
           | CacheValue
           | undefined
         // remove from the localStorage cache
-        await storage.removeItem(storageKey)
+        await clearValue()
         return next(payload)
       })
 
